@@ -126,12 +126,64 @@ Verify: http://localhost:5000/health
 ## 3. Frontend Setup
 
 ```bash
+yum install -y git nginx nodejs
 cd frontend
 npm install
+npm run build
 
-npm run dev
+sudo cp -r dist/* /usr/share/nginx/html/
+=====================================
+- sudo vi /etc/nginx/nginx.conf
+-----------------------------------
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log notice;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+    keepalive_timeout 65;
+
+    server {
+        listen 80;
+        server_name _;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri /index.html;
+        }
+
+        location /api/ {
+
+            proxy_pass http://internal-internalb-108143557.us-east-1.elb.amazonaws.com;
+
+            proxy_http_version 1.1;
+
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+    }
+}
+
+=============================================
+
 ```
-yum install -y git nginx nodejs
+
 
 App: http://localhost:3000
 
