@@ -1,6 +1,6 @@
 # DevOps AI Interviewer — Full Stack
 
-> React + Node.js/Express + AWS RDS (PostgreSQL) + Google Gemini AI
+> React + Node.js/Express + AWS RDS (PostgreSQL) + Google Gemini AI or Groq AI
 
 ---
 
@@ -95,6 +95,185 @@ FRONTEND_URL=http://localhost:3000
 ```
 yum install -y nodejs git
 
+vi cd backend/serivces/*.js           - Groq AI
+==========================================
+const axios = require('axios');
+
+const GROQ_MODEL =
+  process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+const BASE_URL =
+  'https://api.groq.com/openai/v1/chat/completions';
+
+const LEVEL_PROMPTS = {
+  fresher: `fresher DevOps engineer with 0-1 year experience. Topics: CI/CD definition, version control basics (Git), what is Docker, what is a pipeline, Linux commands, what is DevOps culture, agile basics, what is YAML, basic networking (HTTP/DNS), what is a server.`,
+
+  mid: `mid-level DevOps engineer with 2-4 years experience. Topics: Docker networking/volumes/compose, Kubernetes pods/services/deployments/ConfigMaps, Jenkins declarative pipelines, Terraform state/modules/providers, Ansible roles/playbooks, Git branching strategies (GitFlow), Prometheus metrics, Grafana dashboards, nginx reverse proxy, environment variables best practices.`,
+
+  senior: `senior DevOps/SRE engineer with 5+ years experience. Topics: Kubernetes operators/CRDs/RBAC/admission controllers, chaos engineering principles, eBPF for observability, GitOps with ArgoCD/Flux, multi-cloud architecture, SLOs/SLIs/error budgets, platform engineering, distributed tracing (Jaeger/Zipkin), Istio service mesh, FinOps/cloud cost optimization, zero-downtime deployments, database reliability patterns.`
+};
+
+/**
+ * Shuffle options randomly
+ */
+function shuffleOptions(questionData) {
+  const entries = Object.entries(questionData.options);
+
+  // Get correct answer text before shuffle
+  const correctText =
+    questionData.options[questionData.correct];
+
+  // Shuffle array
+  const shuffled = entries.sort(
+    () => Math.random() - 0.5
+  );
+
+  const labels = ['A', 'B', 'C'];
+
+  const newOptions = {};
+
+  let newCorrect = '';
+
+  shuffled.forEach(([oldKey, value], index) => {
+    const newKey = labels[index];
+
+    newOptions[newKey] = value;
+
+    if (value === correctText) {
+      newCorrect = newKey;
+    }
+  });
+
+  questionData.options = newOptions;
+  questionData.correct = newCorrect;
+
+  return questionData;
+}
+
+const generateQuestion = async (
+  level,
+  questionNumber,
+  previousTopics = []
+) => {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY not configured');
+  }
+
+  const topicList =
+    previousTopics.join(', ') || 'none';
+
+  const prompt = `
+You are a strict but fair DevOps interviewer conducting a technical interview.
+
+Generate a multiple-choice question for a ${LEVEL_PROMPTS[level]}
+
+Question number: ${questionNumber} of 7
+
+Previously covered topics:
+${topicList}
+
+Pick a COMPLETELY DIFFERENT topic.
+
+Requirements:
+- Exactly 3 options: A, B, C
+- One option must be correct
+- One option must be a plausible misconception
+- One option must be clearly incorrect
+- Randomize the correct answer position
+- Do NOT always place correct answer in A
+- Keep questions practical and interview-oriented
+- Keep explanation concise
+
+Respond ONLY in valid JSON.
+
+{
+  "topic":"short topic label",
+  "question":"The interview question?",
+  "options":{
+    "A":"Option A text",
+    "B":"Option B text",
+    "C":"Option C text"
+  },
+  "correct":"B",
+  "explanation":"One sentence explanation.",
+  "wrong_note":"Why the other options are wrong."
+}
+`;
+
+  try {
+    const response = await axios.post(
+      BASE_URL,
+      {
+        model: GROQ_MODEL,
+
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+
+        temperature: 0.9,
+
+        max_tokens: 600,
+
+        response_format: {
+          type: 'json_object'
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+
+        timeout: 15000
+      }
+    );
+
+    const raw =
+      response.data.choices?.[0]?.message?.content ||
+      '';
+
+    const clean = raw
+      .replace(/```json|```/g, '')
+      .trim();
+
+    const start = clean.indexOf('{');
+
+    const end = clean.lastIndexOf('}');
+
+    const parsed = JSON.parse(
+      clean.slice(start, end + 1)
+    );
+
+    // Shuffle options after AI response
+    return shuffleOptions(parsed);
+
+  } catch (error) {
+
+    console.error(
+      'Groq API Error:',
+      error.response?.data || error.message
+    );
+
+    throw new Error(
+      'Failed to generate interview question'
+    );
+  }
+};
+
+module.exports = { generateQuestion };
+
+==========================================================================
+- vi backend/.env
+
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxx
+GROQ_MODEL=llama-3.3-70b-versatile
+
+==========================================================================
 # Install client
 sudo dnf install postgresql15 -y
 # Add connection
