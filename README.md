@@ -88,8 +88,11 @@ DB_PASSWORD=your_rds_password
 DB_SSL=true
 
 # Google Gemini (free key from aistudio.google.com)
-GEMINI_API_KEY=AIzaSy...your_key_here
-GEMINI_MODEL=gemini-1.5-flash
+# GEMINI_API_KEY=AIzaSy...your_key_here
+# GEMINI_MODEL=gemini-1.5-flash
+
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxx
+GROQ_MODEL=llama-3.3-70b-versatile
 
 FRONTEND_URL=http://localhost:3000
 ```
