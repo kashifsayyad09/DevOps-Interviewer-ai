@@ -93,6 +93,8 @@ GEMINI_MODEL=gemini-1.5-flash
 
 FRONTEND_URL=http://localhost:3000
 ```
+yum install -y nodejs git
+
 # Install client
 sudo dnf install postgresql15 -y
 # Add connection
@@ -109,6 +111,13 @@ npm run db:migrate
 # Start server
 npm run dev
 ```
+# production use pm2
+
+npm install -g pm2
+
+pm2 start server.js
+pm2 startup
+pm2 save
 
 Verify: http://localhost:5000/health
 
@@ -119,8 +128,10 @@ Verify: http://localhost:5000/health
 ```bash
 cd frontend
 npm install
+
 npm run dev
 ```
+yum install -y git nginx nodejs
 
 App: http://localhost:3000
 
