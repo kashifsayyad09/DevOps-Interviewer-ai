@@ -93,6 +93,12 @@ GEMINI_MODEL=gemini-1.5-flash
 
 FRONTEND_URL=http://localhost:3000
 ```
+# Install client
+sudo dnf install postgresql15 -y
+# Add connection
+PGPASSWORD='N3L~BkxYa)?K<tMgND8zOzfm[IWi' psql -h interview-db.c61wmk0yqjzh.us-east-1.rds.amazonaws.com -U postgres -d postgres -p 5432
+
+CREATE DATABASE devops_interviewer;
 
 ```bash
 npm install
