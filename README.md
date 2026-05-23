@@ -4,6 +4,9 @@
 
 ---
 
+Frontend-TG:80  /
+Backend-TG:5000 /health
+
 ## Project Structure
 
 ```
